@@ -34,7 +34,7 @@ rt_entry_t *longest_prefix_match(u32 dst)
 	rt_entry_t *p = NULL;
 	rt_entry_t *match_entry = NULL;
 	u32 max_mask = 0;
-	list_for_every_entry(p, &rtable, list){
+	list_for_each_entry(p, &rtable, list){
 		if((dst & p->mask) == (p->dest && p->mask)){
 			if(p->mask > max_mask){
 				max_mask = p->mask;
@@ -52,6 +52,7 @@ rt_entry_t *longest_prefix_match(u32 dst)
 // void ip_forward_packet(u32 ip_dst, char *packet, int len)
 // {
 // 	fprintf(stderr, "TODO: forward ip packet.\n");
+//  
 // }
 
 // send IP packet

@@ -40,7 +40,7 @@ void ip_forward_packet(u32 ip_dst, char *packet, int len)
 	if(!next_hop)
 		next_hop = ip_dst;
 
-	iface_send_packet_by_arp(p->iface, ip_dst, packet, len);
+	iface_send_packet_by_arp(p->iface, next_hop, packet, len);
 
 }
 

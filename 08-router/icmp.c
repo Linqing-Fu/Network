@@ -11,4 +11,6 @@
 void icmp_send_packet(const char *in_pkt, int len, u8 type, u8 code)
 {
 	fprintf(stderr, "TODO: malloc and send icmp packet.\n");
+	struct iphdr *ip = packet_to_ip_hdr(in_pkt);
+	
 }

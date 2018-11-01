@@ -18,9 +18,9 @@ void arp_send_request(iface_info_t *iface, u32 dst_ip)
 	fprintf(stderr, "TODO: send arp request when lookup failed in arpcache.\n");
 	char *packet = malloc(ETHER_HDR_SIZE + ETHER_ARP_SIZE);
 	//dest mac unknown, set FF:FF:FF:FF:FF:FF, broadcast
-	memset((struct ether_header *)packet->ether_dhost, 0xFF, ETH_ALEN);
-	memcpy((struct ether_header *)packet->ether_shost, iface->mac, ETH_ALEN);
-	(struct ether_header *)packet->ether_type = htons(ETH_P_ARP);
+	memset(((struct ether_header *)packet)->ether_dhost, 0xFF, ETH_ALEN);
+	memcpy(((struct ether_header *)packet)->ether_shost, iface->mac, ETH_ALEN);
+	((struct ether_header *)packet)->ether_type = htons(ETH_P_ARP);
 
 	struct ether_arp *temp = (struct ether_arp *)(packet + ETHER_HDR_SIZE);
 	temp->arp_op = htons(ARPOP_REQUEST);
@@ -45,9 +45,9 @@ void arp_send_reply(iface_info_t *iface, struct ether_arp *req_hdr)
 
 	char *packet = malloc(ETHER_HDR_SIZE + ETHER_ARP_SIZE);
 
-	memcpy((struct ether_header *)packet->ether_dhost, req_hdr->arp_sha, ETH_ALEN);
-	memcpy((struct ether_header *)packet->ether_shost, iface->mac, ETH_ALEN);
-	(struct ether_header *)packet->ether_type = htons(ETH_P_ARP);
+	memcpy(((struct ether_header *)packet)->ether_dhost, req_hdr->arp_sha, ETH_ALEN);
+	memcpy(((struct ether_header *)packet)->ether_shost, iface->mac, ETH_ALEN);
+	((struct ether_header *)packet)->ether_type = htons(ETH_P_ARP);
 
 	struct ether_arp *temp = (struct ether_arp *)(packet + ETHER_HDR_SIZE);
 	temp->arp_op = htons(ARPOP_REPLY);
@@ -64,17 +64,21 @@ void arp_send_reply(iface_info_t *iface, struct ether_arp *req_hdr)
 
 }
 
+
+
 void handle_arp_packet(iface_info_t *iface, char *packet, int len)
 {
 	fprintf(stderr, "TODO: process arp packet: arp request & arp reply.\n");
-	struct ether_header *header = (struct ether_header *)packet;
+	// struct ether_header *header = (struct ether_header *)packet;
 	struct ether_arp *arp = (struct ether_arp *)(packet + ETHER_HDR_SIZE);
 	if(ntohl(arp->arp_tpa) == iface->ip && ntohs(arp->arp_op) == ARPOP_REQUEST){
 		arp_send_reply(iface, arp);
-	} else if (ntohs(arp->arp_op) == ARPOP_REPLY){
+	} else {
 		arpcache_insert(ntohl(arp->arp_spa), arp->arp_sha);
 	}
 }
+
+
 
 // send (IP) packet through arpcache lookup 
 //

@@ -26,4 +26,5 @@ void handle_arp_packet(iface_info_t *info, char *pkt, int len);
 void arp_send_request(iface_info_t *iface, u32 dst_ip);
 void iface_send_packet_by_arp(iface_info_t *iface, u32 dst_ip, char *pkt, int len);
 
+#define ETHER_ARP_SIZE sizeof(struct ether_arp)
 #endif

@@ -214,6 +214,7 @@ void init_ustack()
 
 	init_rtable();
 	load_rtable_from_kernel();
+	print_rtable();
 }
 
 // run user stack, receive packet on each interface, and handle those packet

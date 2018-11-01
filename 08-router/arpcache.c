@@ -53,6 +53,7 @@ void arpcache_destroy()
 // and mac address with the given arguments
 int arpcache_lookup(u32 ip4, u8 mac[ETH_ALEN])
 {
+	// pthread_mutex_lock(&arpcache.lock);
 	fprintf(stderr, "TODO: lookup ip address in arp cache.\n");
 	for(int i = 0; i < 32; i++){
 		if((arpcache.entries[i].ip4 == ip4) && arpcache.entries[i].valid){
@@ -60,6 +61,8 @@ int arpcache_lookup(u32 ip4, u8 mac[ETH_ALEN])
 			return 1;
 		}
 	}
+	// pthread_mutex_unlock(&arpcache.lock);
+
 	return 0;
 }
 
@@ -75,8 +78,10 @@ void arpcache_append_packet(iface_info_t *iface, u32 ip4, char *packet, int len)
 	fprintf(stderr, "TODO: append the ip address if lookup failed, and send arp request if necessary.\n");
 	pthread_mutex_lock(&arpcache.lock);
 	struct arp_req *p = NULL;
+	// printf("aaaaaaaaaaaaaaaa\n");
 
 	struct cached_pkt *new_packet = (struct cached_pkt *)malloc(sizeof(struct cached_pkt));
+	// printf("bbbbbbbbbbbb\n");
 	new_packet->packet = packet;
 	new_packet->len = len;
 
@@ -126,7 +131,7 @@ void arpcache_insert(u32 ip4, u8 mac[ETH_ALEN])
 	if(find == -1){
 		//find an empty
 		for(int i = 0; i < 32; i++){
-			if(arpcache.entries[i].valid = 0){
+			if(arpcache.entries[i].valid == 0){
 				empty = i;
 				break;
 			}
@@ -148,7 +153,8 @@ void arpcache_insert(u32 ip4, u8 mac[ETH_ALEN])
 		if(p->ip4 == ip4){
 			struct cached_pkt *p_s, *q_s;
 			list_for_each_entry_safe(p_s, q_s, &(p->cached_packets), list){
-				memcpy((struct ether_header*)(p_s->packet)->ether_dhost, mac, ETH_ALEN);
+				struct ether_header* eh = (struct ether_header*)(p_s->packet);
+				memcpy(eh->ether_dhost, mac, ETH_ALEN);
 				iface_send_packet(p->iface, p_s->packet, p_s->len);
 				list_delete_entry(&(p_s->list));
 				free(p_s);
@@ -196,7 +202,9 @@ void *arpcache_sweep(void *arg)
 			} else if(p->retries > 5) {
 				struct cached_pkt *p_s, *q_s;
 				list_for_each_entry_safe(p_s, q_s, &(p->cached_packets), list){
+					pthread_mutex_unlock(&arpcache.lock);
 					icmp_send_packet(p_s->packet, p_s->len, ICMP_DEST_UNREACH, ICMP_HOST_UNREACH);
+					pthread_mutex_lock(&arpcache.lock);
 					list_delete_entry(&(p_s->list));
 					free(p_s);
 				}
@@ -210,3 +218,4 @@ void *arpcache_sweep(void *arg)
 
 	return NULL;
 }
+

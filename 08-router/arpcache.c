@@ -196,7 +196,7 @@ void *arpcache_sweep(void *arg)
 			} else if(p->retries > 5) {
 				struct cached_pkt *p_s, *q_s;
 				list_for_each_entry_safe(p_s, q_s, &(p->cached_packets), list){
-					icmp_send_packet(p->ip4, p_s->len, ICMP_DEST_UNREACH, ICMP_HOST_UNREACH);
+					icmp_send_packet(p_s->packet, p_s->len, ICMP_DEST_UNREACH, ICMP_HOST_UNREACH);
 					list_delete_entry(&(p_s->list));
 					free(p_s);
 				}

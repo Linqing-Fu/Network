@@ -17,7 +17,7 @@ void ip_forward_packet(u32 ip_dst, char *packet, int len)
 	rt_entry_t *p = NULL;
 	p = longest_prefix_match(ip_dst);
 	if(!p){
-		icmp_send_packet(ip_dst, len, ICMP_DEST_UNREACH, ICMP_NET_UNREACH);
+		icmp_send_packet(packet, len, ICMP_DEST_UNREACH, ICMP_NET_UNREACH);
 		return;
 	}
 	struct iphdr *ip = packet_to_ip_hdr(packet);
@@ -26,7 +26,7 @@ void ip_forward_packet(u32 ip_dst, char *packet, int len)
 	u8 ttl = ntohl(ip->ttl) - 1;
 	if(ttl <= 0){
 		//drop packet & reply icmp
-		icmp_send_packet(ip_dst, len, ICMP_TIME_EXCEEDED, ICMP_NET_UNREACH);
+		icmp_send_packet(packet, len, ICMP_TIME_EXCEEDED, ICMP_NET_UNREACH);
 		return;
 	}
 
@@ -55,7 +55,7 @@ void handle_ip_packet(iface_info_t *iface, char *packet, int len)
 	u32 daddr = ntohl(ip->daddr);
 	if (daddr == iface->ip) {
 		fprintf(stderr, "TODO: reply to the sender if it is ping packet.\n");
-		icmp_send_packet(ip_dst, len, ICMP_ECHOREPLY, ICMP_NET_UNREACH);
+		icmp_send_packet(packet, len, ICMP_ECHOREPLY, ICMP_NET_UNREACH);
 		free(packet);
 	}
 	else {

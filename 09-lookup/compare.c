@@ -2,8 +2,8 @@
 #include <stdlib.h>
 
 int main(){
-	FILE *f1 = fopen("1bit.txt", "r");
-	FILE *f2 = fopen("2bit.txt", "r");
+	FILE *f1 = fopen("1.txt", "r");
+	FILE *f2 = fopen("3.txt", "r");
 
 	char c1 = fgetc(f1);
 	char c2 = fgetc(f2);

@@ -1,5 +1,5 @@
-#ifndef __TRIE_H__
-#define __TRIE_H__
+#ifndef __2BIT_TRIE_COMPRESS_H__
+#define __2BIT_TRIE_COMPRESS_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,22 +7,19 @@
 
 #include "types.h"
 
-#if KEY == 1
-	#define MAX_CHILD 2
-#elif KEY == 2
-	#define MAX_CHILD 4
-#elif KEY == 3
-	#define MAX_CHILD 8
-#elif KEY == 4
- 	#define	MAX_CHILD 16
-#endif
+#define KEY 2
+#define MAX_CHILD 4
+// #define  MASK(pre_len)  (u32) (~(~0 << (pre_len)) << (32 - (pre_len)))
 
 typedef struct Tree{
 	int match;
 	u32 ip;
 	int mask;
 	int inode;
-	struct Tree *child[MAX_CHILD];
+	u8 vector;
+	struct Tree *leaf_base;
+	struct Tree *internal_base;
+	// struct Tree *child[MAX_CHILD];
 }Node, *Trie_node;
 
 Node* CreateTrie();

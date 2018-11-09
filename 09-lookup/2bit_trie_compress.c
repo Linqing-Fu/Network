@@ -1,4 +1,4 @@
-#include "./include/2bit_trie.h"
+#include "./include/2bit_trie_compress.h"
 
 // void lookup(struct t trie, u32 key){
 // 	u64 index = 0;
@@ -22,14 +22,13 @@
 
 Node* CreateTrie(){
 	Node *node = (Node *)malloc(sizeof(Node));
-	// memset(node, 0, sizeof(Node));
 	node->match = 0;
 	node->ip = 0;
 	node->mask = 0;
 	node->inode = 0;
-	for(int i = 0; i < MAX_CHILD; i++){
-		node->child[i] = NULL;
-	}
+	node->vector = 0;
+	node->leaf_base = NULL;
+	node->internal_base = NULL;
 	// node->child[0] = NULL;
 	// node->child[1] = NULL;
 	// node->child[2] = NULL;
@@ -113,8 +112,7 @@ int search_node(Trie_node root, u32 ip){
 	Node *t = root;
 	int offset = 0;
 	int index = extract(ip, offset);
-	int num = (32 % KEY == 0)?(32/KEY):(32/KEY + 1);
-	for(int i = 0; i < num; i++){
+	for(int i = 0; i < 32 / KEY; i++){
 		// if(t->match == 1){
 		// 	printf("find a match\n");
 		// 	longest_match_inode = t->inode;
@@ -131,8 +129,9 @@ int search_node(Trie_node root, u32 ip){
 		index = extract(ip, offset);
 		
 	}
-	// printf("ip:%X\n", print_ip);
+	printf("ip:%X\n", print_ip);
 	return longest_match_inode;
+
 
 }
 
@@ -163,7 +162,7 @@ int search_node_lp(Trie_node root, u32 ip){
 
 
 void MBIT_Print_Tree(Trie_node tree){
-	for(int i = 0; i < MAX_CHILD; i++){
+	for(int i = 0; i < 4; i++){
 		if(tree->child[i]){
 			printf("%d son\n", i);
 			MBIT_Print_Tree(tree->child[i]);
@@ -204,7 +203,7 @@ int main(){
 	}
 	// MBIT_Print_Tree(tree);
 
-	// Leaf_Push(&tree, NULL);
+	Leaf_Push(&tree, NULL);
 	// printf("///////////////////////////////\n");
 
 	// MBIT_Print_Tree(tree);
@@ -261,7 +260,7 @@ int main(){
 		u32 search_ip = (((ip_0 & 0xFF)<<24) | (ip_1 & 0xFF)<<16 | (ip_2 & 0xFF)<<8 | (ip_3 & 0xFF) );
 		// printf("ip: %X\n", search_ip);
 		// u32 ip = (((ip_0 & 0xFF)<<24) | (ip_1 & 0xFF)<<16 | (ip_2 & 0xFF)<<8 | (ip_3 & 0xFF) );
-		int longest_match_inode = search_node(tree, search_ip);
+		int longest_match_inode = search_node_lp(tree, search_ip);
 		
 		// if(longest_match_inode != inode){
 			// printf("ip:%u.%u.%u.%u inode:%d & %d\n", ip_0, ip_1, ip_2, ip_3, longest_match_inode, inode);

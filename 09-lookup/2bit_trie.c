@@ -57,10 +57,12 @@ void insert_node(Trie_node root, u32 ip, int mask, int inode){
 		offset += KEY;
 		index = extract(ip, offset);
 	}
-	t->match = 1;
-	t->ip = ip;
-	t->mask = mask;
-	t->inode = inode;
+	if(((t->mask < mask) && t->match) || (t->match == 0)){
+		t->match = 1;
+		t->ip = ip;
+		t->mask = mask;
+		t->inode = inode;
+	}
 }
 
 void Leaf_Push(Trie_node *root, Node *former_match){
@@ -143,42 +145,16 @@ int search_node_lp(Trie_node root, u32 ip){
 	int offset = 0;
 	int index = extract(ip, offset);
 	for(int i = 0; i < 16; i++){
-		// printf("%d ", index);
-		// t = t->child[index];
-		// if(t != NULL){
-		// 	if((t->ip & (MASK(t->mask))) == (ip & (MASK(t->mask)))){
-		// 		if(longest_match_inode == -1 || largest_mask < t->mask){
-		// 			longest_match_inode = t->inode;
-		// 			largest_mask = t->mask;
-		// 		}
-		// 	}
-		// }
 		t = t->child[index];
 		if(t == NULL){
-			// t = t->child[index];
-			// if(t->match == 1){
-				// longest_match_inode = t->inode;
-			// }
 			break;
-			// offset += KEY;
-			// index = extract(ip, offset);
 		} 
 		if(t->match == 1){
 			longest_match_inode = t->inode;
 		}
 		offset += KEY;
 		index = extract(ip, offset);
-
-		// else if(t->match == 1){
-			// longest_match_inode = t->inode;
-			// printf("ip:%X\n", t->ip);
-			// break;
-			// return t->inode;
-		// } else {
-			// break;
-		// }
 	}
-	// printf("\n");
 	return longest_match_inode;
 }
 

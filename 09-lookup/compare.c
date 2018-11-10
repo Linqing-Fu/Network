@@ -3,7 +3,7 @@
 
 int main(){
 	char *name1 = "1.txt";
-	char *name2 = "2bit_lp_compress.txt";
+	char *name2 = "11.txt";
 	FILE *f1 = fopen(name1, "r");
 	FILE *f2 = fopen(name2, "r");
 	printf("compare %s and %s\n", name1, name2);

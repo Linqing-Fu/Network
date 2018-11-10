@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <sys/time.h>
 #include "types.h"
 
 #if KEY == 1
@@ -42,7 +42,9 @@ void Leaf_Push(Trie_node *root, Node *former_match);
 int search_node(Trie_node root, u32 ip);
 int search_node_lp(Trie_node root, u32 ip);
 void MBIT_Print_Tree(Trie_node tree);
+int total_size(Cp_Trie_node compress_tree);
 Cp_node* CreateCpTrie();
+int popcount(char *vector, int offset);
 void Compress(Trie_node tree, Cp_Trie_node compress_tree);
 int lookup_cp_tree(Cp_Trie_node compress_tree, u32 ip);
 

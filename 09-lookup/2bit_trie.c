@@ -200,6 +200,16 @@ Cp_node* CreateCpTrie(){
 	return node;
 }
 
+int popcount(char *vector, int offset){
+	int number = 0;
+	for(int i = 0; i < offset; i++){
+		if(vector[i] == 1){
+			number++;
+		}
+	}
+	return number;
+
+}
 
 void Compress(Trie_node tree, Cp_Trie_node compress_tree){
 
@@ -222,6 +232,7 @@ void Compress(Trie_node tree, Cp_Trie_node compress_tree){
 	//inital
 	memset(compress_tree->leaf_base, 0, MAX_CHILD * sizeof(Cp_node));
 	memset(compress_tree->internal_base, 0, MAX_CHILD * sizeof(Cp_node));
+
 	for(int i = 0; i < MAX_CHILD; i++){
 		//set every inode = -1
 		(compress_tree->leaf_base)[i].inode = -1;
@@ -244,7 +255,39 @@ void Compress(Trie_node tree, Cp_Trie_node compress_tree){
 			}
 		}
 	}
+
 	free(tree);
+
+	//compress vector
+	//count how many 1(internal node) in total
+	int count = popcount(compress_tree->vector, MAX_CHILD);
+	Cp_node *inter = (Cp_node *)malloc(count * sizeof(Cp_node));
+	Cp_node *leaf = (Cp_node *)malloc((MAX_CHILD - count) * sizeof(Cp_node));
+	
+	int index_inter = 0;
+	int index_leaf = 0;
+	for(int i = 0; i < MAX_CHILD; i++){
+		if(compress_tree->vector[i] == 1){
+			inter[index_inter].ip = (compress_tree->internal_base)[i].ip;
+			inter[index_inter].inode = (compress_tree->internal_base)[i].inode;
+			memcpy(inter[index_inter].vector, (compress_tree->internal_base)[i].vector, MAX_CHILD);
+			inter[index_inter].leaf_base = (compress_tree->internal_base)[i].leaf_base;
+			inter[index_inter].internal_base = (compress_tree->internal_base)[i].internal_base;
+			index_inter++;
+		} else {
+			leaf[index_leaf].ip = (compress_tree->leaf_base)[i].ip;
+			leaf[index_leaf].inode = (compress_tree->leaf_base)[i].inode;
+			memcpy(leaf[index_leaf].vector, (compress_tree->leaf_base)[i].vector, MAX_CHILD);			
+			leaf[index_leaf].leaf_base = (compress_tree->leaf_base)[i].leaf_base;
+			leaf[index_leaf].internal_base = (compress_tree->leaf_base)[i].internal_base;
+			index_leaf++;
+		}
+	}
+	free(compress_tree->leaf_base);
+	free(compress_tree->internal_base);
+	compress_tree->leaf_base = leaf;
+	compress_tree->internal_base = inter;
+
 
 }
 
@@ -261,10 +304,14 @@ int lookup_cp_tree(Cp_Trie_node compress_tree, u32 ip){
 	for(int i = 0; i < num; i++){
 		if(t->vector[index] == 1){
 			//child is internal node
-			t = &((t->internal_base)[index]);
+			int index_in_internal = popcount(t->vector, index + 1);
+			t = &((t->internal_base)[index_in_internal - 1]);
+			// t = &((t->internal_base)[index]);
 		} else {
 			//child is leaf or this child doesn't exist
-			t = &((t->leaf_base)[index]);
+			int index_in_leaf = index - popcount(t->vector, index);
+			t = &((t->leaf_base)[index_in_leaf]);
+			// t = &((t->leaf_base)[index]);
 			if(t->inode != -1){
 				//is a leaf
 				longest_match_inode = t->inode;
@@ -294,6 +341,25 @@ void MBIT_Print_Tree(Trie_node tree){
 	}
 }
 
+int total_size(Cp_Trie_node compress_tree){
+	long long unsigned int size = 0;
+	if((compress_tree->leaf_base == NULL) && (compress_tree->internal_base == NULL)){
+		return 0;
+	} else {
+		size += sizeof(compress_tree);
+	}
+	for(int i = 0; i < MAX_CHILD; i++){
+		if(compress_tree->vector[i] == 1){
+			int index_in_internal = popcount(compress_tree->vector, i + 1);
+			size += total_size(&((compress_tree->internal_base)[index_in_internal - 1]));
+		} else {
+			int index_in_leaf = i - popcount(compress_tree->vector, i);
+			size += total_size(&((compress_tree->leaf_base)[index_in_leaf]));
+		}
+	}
+	return size;
+}
+
 int main(){
 	// printf("start\n");
 	
@@ -321,9 +387,9 @@ int main(){
 		// insert_node(tree_2bit, ip, mask, inode);		
 	}
 	// MBIT_Print_Tree(tree);
-	#if KEY != 1
-		Leaf_Push(&tree, NULL);
-	#endif
+	// #if KEY != 1
+		// Leaf_Push(&tree, NULL);
+	// #endif
 	// MBIT_Print_Tree(tree);
 
 	#ifdef CPRESS
@@ -331,6 +397,9 @@ int main(){
 
 	// printf("Compressing tree...\n");
 	Compress(tree, compress_tree);
+	printf("single node size:%lu\n", sizeof(compress_tree));
+	long long unsigned int total = total_size(compress_tree);
+	printf("total size is %llu\n", total);
 
 	#endif
 	// printf("Compress finished\n");
@@ -339,6 +408,7 @@ int main(){
 	
 
 	fseek(fp, 0, SEEK_SET);
+	float total_time = 0;
 	for(int i = 0; i < 697882; i++){
 		unsigned int ip_0 ;//= 223;
 		unsigned int ip_1 ;//= 255;
@@ -350,6 +420,9 @@ int main(){
 		// scanf("%u.%u.%u.%u", &ip_0, &ip_1, &ip_2, &ip_3);
 
 		u32 search_ip = (((ip_0 & 0xFF)<<24) | (ip_1 & 0xFF)<<16 | (ip_2 & 0xFF)<<8 | (ip_3 & 0xFF) );
+		
+		struct timeval start, end;
+		gettimeofday(&start, NULL);
 		#if KEY == 1
 			int longest_match_inode = search_node(tree, search_ip);
 		#else
@@ -359,12 +432,16 @@ int main(){
 				int longest_match_inode = search_node_lp(tree, search_ip);
 			#endif
 		#endif
+		gettimeofday(&end, NULL);
+		total_time += (end.tv_usec - start.tv_usec) + (end.tv_sec - start.tv_sec)*1000000;
 		// if(longest_match_inode != inode){
 			// printf("ip:%u.%u.%u.%u inode:%d & %d\n", ip_0, ip_1, ip_2, ip_3, longest_match_inode, inode);
 		// } else {
-		printf("%d\n", longest_match_inode);
+		// printf("%d\n", longest_match_inode);
 		// }
 	}
+
+	printf("Average time per lookup: %.10f\n", total_time / 697882);
 
 
 	

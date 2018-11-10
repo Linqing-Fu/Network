@@ -2,14 +2,16 @@
 #include <stdlib.h>
 
 int main(){
-	FILE *f1 = fopen("1.txt", "r");
-	FILE *f2 = fopen("3.txt", "r");
+	char *name1 = "1.txt";
+	char *name2 = "2bit_lp_compress.txt";
+	FILE *f1 = fopen(name1, "r");
+	FILE *f2 = fopen(name2, "r");
+	printf("compare %s and %s\n", name1, name2);
 
 	char c1 = fgetc(f1);
 	char c2 = fgetc(f2);
 	while(!feof(f1) && !feof(f2)){
 		if(c1 != c2){
-			printf("NO\n");
 			system("pause");
 			return 0;
 		}

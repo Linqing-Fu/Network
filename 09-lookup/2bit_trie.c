@@ -26,7 +26,7 @@ Node* CreateTrie(){
 	node->match = 0;
 	node->ip = 0;
 	node->mask = 0;
-	node->inode = 0;
+	node->inode = -1;
 	for(int i = 0; i < MAX_CHILD; i++){
 		node->child[i] = NULL;
 	}
@@ -40,7 +40,12 @@ Node* CreateTrie(){
 int extract(u32 ip, int offset){
 	// printf("calculate value\n");
 	unsigned int temp = 0xFFFFFFFF;
-	int value = (ip >> (32 - (offset + KEY))) & (temp >> (32 - KEY));
+	int value;
+	if((32 - offset - KEY) >= 0){
+		value = (ip >> (32 - (offset + KEY))) & (temp >> (32 - KEY));
+	} else {
+		value = ip & (temp >> (32 - KEY));
+	}
 	return value;
 }
 
@@ -69,13 +74,27 @@ void insert_node(Trie_node root, u32 ip, int mask, int inode){
 }
 
 void Leaf_Push(Trie_node *root, Node *former_match){
-	if(((*root)->child[0] == NULL) && ((*root)->child[1] == NULL) && ((*root)->child[2] == NULL) && ((*root)->child[3] == NULL)){
-		// printf("ip:%X\n", (*root)->ip);
-		return;
-	}
+	#if KEY == 2
+		if(((*root)->child[0] == NULL) && ((*root)->child[1] == NULL) && ((*root)->child[2] == NULL) && ((*root)->child[3] == NULL)){
+			return;
+		}
+	#elif KEY == 3
+		if(((*root)->child[0] == NULL) && ((*root)->child[1] == NULL) && ((*root)->child[2] == NULL) && ((*root)->child[3] == NULL) &&
+		   ((*root)->child[4] == NULL) && ((*root)->child[5] == NULL) && ((*root)->child[6] == NULL) && ((*root)->child[7] == NULL)){
+			return;
+		}
+	#elif KEY == 4
+		if(((*root)->child[0] == NULL) && ((*root)->child[1] == NULL) && ((*root)->child[2] == NULL) && ((*root)->child[3] == NULL) &&
+		   ((*root)->child[4] == NULL) && ((*root)->child[5] == NULL) && ((*root)->child[6] == NULL) && ((*root)->child[7] == NULL) &&
+		   ((*root)->child[8] == NULL) && ((*root)->child[9] == NULL) && ((*root)->child[10] == NULL) && ((*root)->child[11] == NULL) &&
+		   ((*root)->child[12] == NULL) && ((*root)->child[13] == NULL) && ((*root)->child[14] == NULL) && ((*root)->child[15] == NULL)){			
+			return;
+		}
+	#endif
+
 	Node *push_node = NULL;
 	push_node = ((*root)->match)?(*root):former_match;
-	for(int i = 0; i < 4; i++){
+	for(int i = 0; i < MAX_CHILD; i++){
 		if((*root)->child[i] == NULL){
 			(*root)->child[i] = push_node;
 			if(push_node != NULL){
@@ -93,7 +112,7 @@ void Leaf_Push(Trie_node *root, Node *former_match){
 	if((*root)->match){
 		Node *new_node = NULL;
 		new_node = CreateTrie();
-		for(int i = 0; i < 4; i++){
+		for(int i = 0; i < MAX_CHILD; i++){
 			new_node->child[i] = (*root)->child[i];
 			(*root)->child[i] = NULL;
 		}
@@ -147,7 +166,8 @@ int search_node_lp(Trie_node root, u32 ip){
 	Node *t = root;
 	int offset = 0;
 	int index = extract(ip, offset);
-	for(int i = 0; i < 16; i++){
+	int num = (32 % KEY == 0)?(32/KEY):(32/KEY + 1);
+	for(int i = 0; i < num; i++){
 		t = t->child[index];
 		if(t == NULL){
 			break;
@@ -161,6 +181,104 @@ int search_node_lp(Trie_node root, u32 ip){
 	return longest_match_inode;
 }
 
+
+
+Cp_node* CreateCpTrie(){
+	Cp_node *node = (Cp_node *)malloc(sizeof(Cp_node));
+	node->ip = 0;
+	// node->mask = 0;
+	node->inode = -1;
+	for(int i = 0; i < MAX_CHILD; i++){
+		node->vector[i] = 0;
+	}
+	node->leaf_base = NULL;
+	node->internal_base = NULL;
+	// node->child[0] = NULL;
+	// node->child[1] = NULL;
+	// node->child[2] = NULL;
+	// node->child[3] = NULL;
+	return node;
+}
+
+
+void Compress(Trie_node tree, Cp_Trie_node compress_tree){
+
+	//check if tree is a leaf
+	if(tree->match == 1){
+		compress_tree->ip = tree->ip;
+		compress_tree->inode = tree->inode;
+		return;
+	}
+
+	//malloc 2 * MAX_CHILD for children
+	compress_tree->leaf_base = (Cp_node *)malloc(MAX_CHILD * sizeof(Cp_node));
+	if(compress_tree->leaf_base == NULL){
+		printf("cannot malloc leaf base\n");
+	}
+	compress_tree->internal_base = (Cp_node *)malloc(MAX_CHILD * sizeof(Cp_node));
+	if(compress_tree->internal_base == NULL){
+		printf("cannot malloc internal_base\n");
+	}
+	//inital
+	memset(compress_tree->leaf_base, 0, MAX_CHILD * sizeof(Cp_node));
+	memset(compress_tree->internal_base, 0, MAX_CHILD * sizeof(Cp_node));
+	for(int i = 0; i < MAX_CHILD; i++){
+		//set every inode = -1
+		(compress_tree->leaf_base)[i].inode = -1;
+		(compress_tree->internal_base)[i].inode = -1;
+	}
+
+	for(int i = 0; i < MAX_CHILD; i++){
+		if(tree->child[i] != NULL){
+			if(tree->child[i]->match == 0){
+				//child is a internal node
+				//save in internal_base
+				compress_tree->vector[i] = 1;
+
+				Compress(tree->child[i], &((compress_tree->internal_base)[i]));
+
+			} else {
+				//child is a leaf
+				Compress(tree->child[i], &((compress_tree->leaf_base)[i]));
+
+			}
+		}
+	}
+	free(tree);
+
+}
+
+int lookup_cp_tree(Cp_Trie_node compress_tree, u32 ip){
+	if((compress_tree->leaf_base == NULL) && (compress_tree->internal_base == NULL)){
+		printf("tree is empty\n");
+		return -1;
+	}
+	int longest_match_inode = -1;
+	Cp_node *t = compress_tree;
+	int offset = 0;
+	int index = extract(ip, offset);
+	int num = (32 % KEY == 0)?(32/KEY):(32/KEY + 1);
+	for(int i = 0; i < num; i++){
+		if(t->vector[index] == 1){
+			//child is internal node
+			t = &((t->internal_base)[index]);
+		} else {
+			//child is leaf or this child doesn't exist
+			t = &((t->leaf_base)[index]);
+			if(t->inode != -1){
+				//is a leaf
+				longest_match_inode = t->inode;
+				break;
+			} else {
+				//doesn't exist
+				break;
+			}
+		}
+		offset += KEY;
+		index = extract(ip, offset);
+	}
+	return longest_match_inode;
+}
 
 void MBIT_Print_Tree(Trie_node tree){
 	for(int i = 0; i < MAX_CHILD; i++){
@@ -203,46 +321,19 @@ int main(){
 		// insert_node(tree_2bit, ip, mask, inode);		
 	}
 	// MBIT_Print_Tree(tree);
-
-	// Leaf_Push(&tree, NULL);
-	// printf("///////////////////////////////\n");
-
+	#if KEY != 1
+		Leaf_Push(&tree, NULL);
+	#endif
 	// MBIT_Print_Tree(tree);
-	//////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////
-	/* 1bit:  Test all data  */
 
-	// printf("Input an ip search in tree:\n");
-	
-	// fseek(fp, 0, SEEK_SET);
-	// for(int i = 0; i < 697882; i++){
-	// 	unsigned int ip_0;// = 223;
-	// 	unsigned int ip_1;// = 227;
-	// 	unsigned int ip_2;// = 132;
-	// 	unsigned int ip_3;// = 80;
-	// 	int mask;
-	// 	int inode;
-	// 	fscanf(fp, "%u.%u.%u.%u %d %d", &ip_0, &ip_1, &ip_2, &ip_3, &mask, &inode);
-	// 	// scanf("%u.%u.%u.%u", &ip_0, &ip_1, &ip_2, &ip_3);
+	#ifdef CPRESS
+	Cp_Trie_node compress_tree = CreateCpTrie();
 
-	// 	u32 search_ip = (((ip_0 & 0xFF)<<24) | (ip_1 & 0xFF)<<16 | (ip_2 & 0xFF)<<8 | (ip_3 & 0xFF) );
-	// 	// printf("%X\n", search_ip);
-	// 	// u32 ip = (((ip_0 & 0xFF)<<24) | (ip_1 & 0xFF)<<16 | (ip_2 & 0xFF)<<8 | (ip_3 & 0xFF) );
-		
-	// 	int longest_match_inode = search_node(tree, search_ip);
+	// printf("Compressing tree...\n");
+	Compress(tree, compress_tree);
 
-	// 	if(longest_match_inode == -1){
-	// 		printf("ip:%u.%u.%u.%u is not in this tree\n", ip_0, ip_1, ip_2, ip_3);
-	// 	} else {
-	// 		printf("According to the longest match, the inode is %d\n", longest_match_inode);
-	// 	}
-	// }
-	////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////
-
-	//////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////
-	/* 2bit:  Test all data  */
+	#endif
+	// printf("Compress finished\n");
 
 	// printf("Input an ip search in tree:\n");
 	
@@ -259,18 +350,21 @@ int main(){
 		// scanf("%u.%u.%u.%u", &ip_0, &ip_1, &ip_2, &ip_3);
 
 		u32 search_ip = (((ip_0 & 0xFF)<<24) | (ip_1 & 0xFF)<<16 | (ip_2 & 0xFF)<<8 | (ip_3 & 0xFF) );
-		// printf("ip: %X\n", search_ip);
-		// u32 ip = (((ip_0 & 0xFF)<<24) | (ip_1 & 0xFF)<<16 | (ip_2 & 0xFF)<<8 | (ip_3 & 0xFF) );
-		int longest_match_inode = search_node(tree, search_ip);
-		
+		#if KEY == 1
+			int longest_match_inode = search_node(tree, search_ip);
+		#else
+			#ifdef CPRESS
+				int longest_match_inode = lookup_cp_tree(compress_tree, search_ip);
+			#else
+				int longest_match_inode = search_node_lp(tree, search_ip);
+			#endif
+		#endif
 		// if(longest_match_inode != inode){
 			// printf("ip:%u.%u.%u.%u inode:%d & %d\n", ip_0, ip_1, ip_2, ip_3, longest_match_inode, inode);
 		// } else {
 		printf("%d\n", longest_match_inode);
 		// }
 	}
-	////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////
 
 
 	

@@ -25,6 +25,16 @@ typedef struct Tree{
 	struct Tree *child[MAX_CHILD];
 }Node, *Trie_node;
 
+typedef struct Compress_Tree{
+	u32 ip; //debug
+	// int mask;
+	int inode;
+	char vector[MAX_CHILD];
+	struct Compress_Tree *leaf_base;
+	struct Compress_Tree *internal_base;
+}Cp_node, *Cp_Trie_node;
+
+
 Node* CreateTrie();
 int extract(u32 ip, int offset);
 void insert_node(Trie_node root, u32 ip, int mask, int inode);
@@ -32,6 +42,8 @@ void Leaf_Push(Trie_node *root, Node *former_match);
 int search_node(Trie_node root, u32 ip);
 int search_node_lp(Trie_node root, u32 ip);
 void MBIT_Print_Tree(Trie_node tree);
-
+Cp_node* CreateCpTrie();
+void Compress(Trie_node tree, Cp_Trie_node compress_tree);
+int lookup_cp_tree(Cp_Trie_node compress_tree, u32 ip);
 
 #endif

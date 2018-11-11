@@ -341,21 +341,31 @@ void MBIT_Print_Tree(Trie_node tree){
 	}
 }
 
-int total_size(Cp_Trie_node compress_tree){
+int total_size_cp_tree(Cp_Trie_node compress_tree){
 	long long unsigned int size = 0;
-	if((compress_tree->leaf_base == NULL) && (compress_tree->internal_base == NULL)){
-		return 0;
-	} else {
-		size += sizeof(compress_tree);
-	}
+	size += (sizeof(Cp_node) - 4);
+	
 	for(int i = 0; i < MAX_CHILD; i++){
 		if(compress_tree->vector[i] == 1){
 			int index_in_internal = popcount(compress_tree->vector, i + 1);
-			size += total_size(&((compress_tree->internal_base)[index_in_internal - 1]));
+			size += total_size_cp_tree(&((compress_tree->internal_base)[index_in_internal - 1]));
 		} else {
 			int index_in_leaf = i - popcount(compress_tree->vector, i);
-			size += total_size(&((compress_tree->leaf_base)[index_in_leaf]));
+			size += (sizeof(Cp_node) - 4);//total_size(&((compress_tree->leaf_base)[index_in_leaf]));
 		}
+	}
+	return size;
+}
+
+int total_size_tree(Trie_node tree){
+	long long unsigned int size = 0;
+	if(tree == NULL){
+		return 0;
+	} else {
+		size += (sizeof(Node) - 4);
+	}
+	for(int i = 0; i < MAX_CHILD; i++){
+		size += total_size_tree(tree->child[i]);
 	}
 	return size;
 }
@@ -387,18 +397,26 @@ int main(){
 		// insert_node(tree_2bit, ip, mask, inode);		
 	}
 	// MBIT_Print_Tree(tree);
-	// #if KEY != 1
-		// Leaf_Push(&tree, NULL);
-	// #endif
+	#if KEY != 1
+		Leaf_Push(&tree, NULL);
+	#endif
 	// MBIT_Print_Tree(tree);
+
+	#ifndef CPRESS
+		long long unsigned int total = total_size_tree(tree);
+		printf("total size is %llu\n", total);
+
+	#endif
 
 	#ifdef CPRESS
 	Cp_Trie_node compress_tree = CreateCpTrie();
 
 	// printf("Compressing tree...\n");
 	Compress(tree, compress_tree);
-	printf("single node size:%lu\n", sizeof(compress_tree));
-	long long unsigned int total = total_size(compress_tree);
+	// printf("single node size:%lu\n", sizeof(compress_tree));
+	// printf("single node size:%lu\n", sizeof(Cp_node));
+
+	long long unsigned int total = total_size_cp_tree(compress_tree);
 	printf("total size is %llu\n", total);
 
 	#endif

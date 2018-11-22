@@ -59,5 +59,14 @@ struct nat_table {
 void nat_table_init();
 void nat_table_destroy();
 void nat_translate_packet(iface_info_t *iface, char *packet, int len);
+void *nat_timeout();
+
+// static int get_packet_direction(char *packet);
+// int assign_external_port();
+// u8 my_hash(u32 ip, u16 port);
+// void update_ip_tcp(char *packet, u32 ip_addr, u16 port, int dir);
+// void update_conn(struct nat_mapping *p, struct tcphdr *tcp);
+// void do_translation(iface_info_t *iface, char *packet, int len, int dir);
+
 
 #endif

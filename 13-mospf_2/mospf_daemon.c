@@ -60,7 +60,7 @@ void *sending_mospf_lsu_thread(void *param);
 void *checking_nbr_thread(void *param);
 void send_mospf_lsu_once();
 void *print_nbr(void *param);
-void *checking_database_thread(void * param);
+void *update_database(void * param);
 
 void *generate_rtable();
 int node_num();
@@ -110,11 +110,11 @@ void mospf_run()
 	pthread_create(&nbr, NULL, checking_nbr_thread, NULL);
 	// pthread_create(&dump, NULL, print_nbr, NULL);
 	pthread_create(&g_rtable, NULL, generate_rtable, NULL);
-	pthread_create(&update, NULL, checking_database_thread, NULL);
+	pthread_create(&update, NULL, update_database, NULL);
 
 }
 
-void *checking_database_thread(void * param) {
+void *update_database(void * param) {
     time_t now = 0;
     rt_entry_t * rt_entry = NULL, * rt_entry_q = NULL;
     mospf_db_entry_t * db_entry = NULL, * db_entry_q = NULL;
@@ -468,18 +468,12 @@ void *generate_rtable(){
 			}
 		}
 
-		// printf("aaaaaaaaaaaaaa\n");
 		generate_graph(my_graph, num);
-		// printf("bbbbbbbbbbbbbbbbbbb\n");
 		print_graph(my_graph, num);
-		// printf("ccccccccccccccccccc\n");
 		calculate_shortest_path(my_graph, num);
-		// printf("ddddddddddddddddddd\n");
 		transform_to_rtable(num);
-		// printf("fffffffffffffffffff\n");
 		print_rtable();
 		pthread_mutex_unlock(&mospf_lock);
-
 
 	}
 	return NULL;
@@ -540,7 +534,8 @@ void calculate_shortest_path(int my_graph[MAX_NODE][MAX_NODE], int num){
 		visited[u_index] = true;
 
 		for(int j = 0; j < num; j++){
-			if((visited[j] == false) && (my_graph[u_index][j] > 0) && (dist[u_index] + my_graph[u_index][j] < dist[j]) && dist[u_index]!=MAX_LEN){
+			if((visited[j] == false) && (my_graph[u_index][j] > 0) 
+				&& (dist[u_index] + my_graph[u_index][j] < dist[j]) && dist[u_index]!=MAX_LEN){
 				dist[j] = dist[u_index] + my_graph[u_index][j];
 				prev[j] = u_index;
 			}

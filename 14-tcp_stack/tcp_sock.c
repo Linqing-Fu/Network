@@ -287,7 +287,7 @@ int tcp_sock_connect(struct tcp_sock *tsk, struct sock_addr *skaddr)
 	
 	//bind
 
-	//??????
+	//random generate seq num
 	tsk->iss = tcp_new_iss();
 	tsk->snd_nxt = tsk->iss;
 
@@ -357,6 +357,7 @@ struct tcp_sock *tcp_sock_accept(struct tcp_sock *tsk)
 		p = tcp_sock_accept_dequeue(tsk);
 		tcp_set_state(p, TCP_ESTABLISHED);
 	}
+	printf("change to TCP_ESTABLISHED\n");
 	return p;
 }
 
@@ -386,11 +387,11 @@ void tcp_sock_close(struct tcp_sock *tsk)
 			break;
 		case TCP_SYN_SENT:
 			break;
-		case TCP_ESTABLISHED:
+		case TCP_ESTABLISHED: //client app: after connect, immediatly close 
 			tcp_send_control_packet(tsk, TCP_FIN | TCP_ACK);
 		    tcp_set_state(tsk, TCP_FIN_WAIT_1);
 		    break;
-		case TCP_CLOSE_WAIT:
+		case TCP_CLOSE_WAIT: //server app
 			tcp_send_control_packet(tsk, TCP_FIN | TCP_ACK);
 			tcp_set_state(tsk, TCP_LAST_ACK);
 			break;

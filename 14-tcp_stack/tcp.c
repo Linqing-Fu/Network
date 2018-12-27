@@ -53,8 +53,10 @@ void tcp_cb_init(struct iphdr *ip, struct tcphdr *tcp, struct tcp_cb *cb)
 	cb->saddr = ntohl(ip->saddr);
 	cb->daddr = ntohl(ip->daddr);
 	cb->sport = ntohs(tcp->sport);
+	printf("cb->sport:%d\n", cb->sport);
 	cb->dport = ntohs(tcp->dport);
 	cb->seq = ntohl(tcp->seq);
+	printf("cb->seq%d\n", cb->seq);
 	cb->seq_end = cb->seq + len + ((tcp->flags & (TCP_SYN|TCP_FIN)) ? 1 : 0);
 	cb->ack = ntohl(tcp->ack);
 	cb->payload = (char *)tcp + tcp->off * 4;

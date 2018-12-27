@@ -30,8 +30,8 @@ void *tcp_server(void *arg)
 
 	log(DEBUG, "accept a connection.");
 
-	sleep(2);
-
+	sleep(10);
+	printf("should be server-close wait\n");
 	tcp_sock_close(csk);
 	
 	return NULL;

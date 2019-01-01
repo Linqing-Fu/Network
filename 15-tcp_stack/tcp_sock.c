@@ -358,16 +358,24 @@ struct tcp_sock *tcp_sock_accept(struct tcp_sock *tsk)
 	// 	tcp_set_state(p, TCP_ESTABLISHED);
 	// }
 	// return p;
-	if (!tsk->accept_backlog){
-		sleep_on(tsk->wait_accept);
-	}
-	if (tsk->accept_backlog){
-		struct tcp_sock *p = tcp_sock_accept_dequeue(tsk);
-		tcp_set_state(p, TCP_ESTABLISHED);
-		/*printf("leave tcp_sock_accept\n");*/
-		return p;
-	}
-	return NULL;
+	// if (!tsk->accept_backlog){
+	// 	sleep_on(tsk->wait_accept);
+	// }
+	// if (tsk->accept_backlog){
+	// 	struct tcp_sock *p = tcp_sock_accept_dequeue(tsk);
+	// 	tcp_set_state(p, TCP_ESTABLISHED);
+	// 	/*printf("leave tcp_sock_accept\n");*/
+	// 	return p;
+	// }
+	struct tcp_sock *new_tsk = NULL;
+    if(list_empty(&tsk->accept_queue)){
+    	printf("sleep on wait accept\n");
+    	sleep_on(tsk->wait_accept);
+    }
+    new_tsk = tcp_sock_accept_dequeue(tsk);
+    // if(new_tsk) tcp_set_state(new_tsk, TCP_ESTABLISHED);
+    return new_tsk;
+
 }
 
 

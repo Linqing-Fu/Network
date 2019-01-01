@@ -46,7 +46,6 @@ static inline int sleep_on(struct async_wait *wait)
 	wait->sleep = 0;
 unlock:
 	pthread_mutex_unlock(&wait->lock);
-
 	return -(wait->dead);
 }
 

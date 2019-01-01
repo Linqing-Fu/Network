@@ -2,6 +2,7 @@
 #define __SYNCH_WAIT_H__
 
 #include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 struct synch_wait {
@@ -40,16 +41,17 @@ unlock:
 static inline int sleep_on(struct synch_wait *wait)
 {
 	pthread_mutex_lock(&wait->lock);
-	if (wait->dead)
+	if (wait->dead){
 		goto unlock;
+	}
 	wait->sleep = 1;
-	if (!wait->notified)
+	if (!wait->notified){
 		pthread_cond_wait(&wait->cond, &wait->lock);
+	}
 	wait->notified = 0;
 	wait->sleep = 0;
 unlock:
 	pthread_mutex_unlock(&wait->lock);
-
 	return -(wait->dead);
 }
 

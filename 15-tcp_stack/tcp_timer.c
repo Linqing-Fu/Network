@@ -3,6 +3,7 @@
 #include "tcp_sock.h"
 
 #include <unistd.h>
+#include <stdio.h>
 
 static struct list_head timer_list;
 
@@ -20,6 +21,7 @@ void tcp_scan_timer_list()
 			tsk = timewait_to_tcp_sock(t);
 			if (! tsk->parent)
 				tcp_bind_unhash(tsk);
+			printf("in timer list, set TCP_CLOSED\n");
 			tcp_set_state(tsk, TCP_CLOSED);
 			free_tcp_sock(tsk);
 		}

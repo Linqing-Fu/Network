@@ -81,6 +81,7 @@ void *tcp_client(void *arg)
 
 	int n = 10;
 	for (int i = 0; i < n; i++) {
+		//sent to server
 		if (tcp_sock_write(tsk, wbuf + i, wlen - n) < 0){
 			break;
 
@@ -110,18 +111,26 @@ void *tcp_client(void *arg)
 
 int tcp_sock_read(struct tcp_sock *tsk, char *buf, int len){
 	printf("in read\n");
-	pthread_mutex_lock(&tsk->rcv_buf->lock);
+	// pthread_mutex_lock(&tsk->rcv_buf->lock);
+	// if(ring_buffer_empty(tsk->rcv_buf)){
+	// 	pthread_mutex_unlock(&tsk->rcv_buf->lock);
+	// 	sleep_on(tsk->wait_recv);
+	// 	printf("sleep on wait recv\n");
+	// 	pthread_mutex_lock(&tsk->rcv_buf->lock);
+	// }
+	// int read = read_ring_buffer(tsk->rcv_buf, buf, len);
 
-	if(ring_buffer_empty(tsk->rcv_buf)){
-		pthread_mutex_unlock(&tsk->rcv_buf->lock);
+
+	// pthread_mutex_unlock(&tsk->rcv_buf->lock);
+	if(ring_buffer_empty(tsk->rcv_buf)) {
+		printf("sleep on wait recv\n");
 		sleep_on(tsk->wait_recv);
-		pthread_mutex_lock(&tsk->rcv_buf->lock);
 	}
 
-	int read = read_ring_buffer(tsk->rcv_buf, buf, len);
-
-
+	pthread_mutex_lock(&tsk->rcv_buf->lock);
+    int read = read_ring_buffer(tsk->rcv_buf, buf, len);
 	pthread_mutex_unlock(&tsk->rcv_buf->lock);
+
 	printf("out read\n");
 	return read;
 }
@@ -137,7 +146,7 @@ int tcp_sock_write(struct tcp_sock *tsk, char *buf, int len){
 	memcpy((char *)packet + ETHER_HDR_SIZE + IP_BASE_HDR_SIZE + TCP_BASE_HDR_SIZE, buf, data_size);
 
 	tcp_send_packet(tsk, packet, total_size);
-
+	printf("sleep on wait send\n");
 	sleep_on(tsk->wait_send);
 	return data_size;
 

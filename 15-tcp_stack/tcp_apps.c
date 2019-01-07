@@ -122,7 +122,12 @@ int tcp_sock_read(struct tcp_sock *tsk, char *buf, int len){
 
 
 	// pthread_mutex_unlock(&tsk->rcv_buf->lock);
+	printf("head:%d tail:%d\n", tsk->rcv_buf->head, tsk->rcv_buf->tail);
 	if(ring_buffer_empty(tsk->rcv_buf)) {
+		printf("emptyyyyyyyyyyyyyyyyyyyyyy\n");
+		if(tsk->state == TCP_CLOSE_WAIT){
+    		return -1;
+    	}
 		printf("sleep on wait recv\n");
 		sleep_on(tsk->wait_recv);
 	}

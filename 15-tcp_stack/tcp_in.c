@@ -218,6 +218,8 @@ void tcp_process(struct tcp_sock *tsk, struct tcp_cb *cb, char *packet)
 	if ((state == TCP_ESTABLISHED) && (cb->flags & TCP_FIN)) {
 		printf("10\n");
 		tcp_set_state(tsk, TCP_CLOSE_WAIT);
+		printf("wake up wait recv\n");
+		wake_up(tsk->wait_recv);
 		tcp_send_control_packet(tsk, TCP_ACK);
 	}
 	//markflag
